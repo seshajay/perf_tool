@@ -13,7 +13,7 @@ There are some sample apps in the 'test' folder. test/testclient.cc instantiates
 app::ClientApp and can be used to send traffic to the remote end using multiple
 connections. test/testserver.cc instantiates app::ServerApp which creates an
 instance of app::TrafficServer for every incoming connection, to process
-incoming data in its own thread.
+incoming data in its own thread. This apps currently compile on linux - ubuntu.
 
 To compile:
 
