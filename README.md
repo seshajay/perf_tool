@@ -16,14 +16,21 @@ instance of app::TrafficServer for every incoming connection, to process
 incoming data in its own thread.
 
 To compile:
+
 $ cd test/
+
 $ make
 
 To clean:
+
 $ make clean
 
 To test:
+
 $ ./testclient -h
+
 $ ./testclient -c 192.168.1.11 -p 11200 -l 192.168.1.10 -t 60 -r 500mbit -n 2
+
 $ ./testserver -h
+
 $ ./testserver -l 192.168.1.11 -p 11200
