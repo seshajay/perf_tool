@@ -19,6 +19,7 @@
 typedef std::function<void (void)> func_t;
 
 typedef std::chrono::time_point<std::chrono::system_clock> systime_t;
+typedef std::chrono::time_point<std::chrono::high_resolution_clock> hrsystime_t;
 
 static const std::vector<std::string> sizes = { "bps", "kbps", "mbps", "gbps"};
 static const std::vector<int> multipliers   = { 0, 10, 20, 30};

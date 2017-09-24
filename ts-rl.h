@@ -15,7 +15,7 @@ namespace ts
     {
         size_t capacity;
         size_t availCapacity;
-        systime_t nextReplenishTime;
+        hrsystime_t nextReplenishTime;
         std::chrono::nanoseconds timeInterval;
 
         virtual bool isReady();

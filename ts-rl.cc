@@ -14,7 +14,7 @@ ts::RateLimiter::RateLimiter(const ts::TSDescriptor& tsd) :
     uint64_t rate = strtou64(tsd.args);
     capacity = rate / (8 * SEC_EPOCH_CONV);
     availCapacity = capacity;
-    nextReplenishTime = chrono::system_clock::now();
+    nextReplenishTime = chrono::high_resolution_clock::now();
     timeInterval = chrono::microseconds(TIME_EPOCH_US);
 }
 
@@ -28,7 +28,7 @@ ts::RateLimiter::isReady()
     //An approximation - we replenish only when we don't have capacity
     if (!availCapacity)
     {
-        systime_t currTime = chrono::high_resolution_clock::now();
+        hrsystime_t currTime = chrono::high_resolution_clock::now();
         if (currTime < nextReplenishTime)
         {
             //TODO: Improve this - make this asynchronous instead of blocking
