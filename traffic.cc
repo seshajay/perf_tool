@@ -35,36 +35,30 @@ app::TrafficDriver::TrafficDriver(const string& name, const ip::sockaddr& laddr,
     sentBytes(0),
     shuttingDown(false)
 {
-    try
+    uint16_t lport;
+    switch (laddr.sa.sa_family)
     {
-        uint16_t lport;
-        switch (laddr.sa.sa_family)
-        {
-        case AF_INET:
-            lport = laddr.ipv4.sin_port;
-            break;
-        case AF_INET6:
-            lport = laddr.ipv6.sin6_port;
-            break;
-        default:
-            throw std::runtime_error(ERRSTR("Wrong address family"));
-        }
-        if (lport)
-            sock->bind();
-
-        if (sndBufSize)
-            sock->setSendBufferSize(sndBufSize);
-
-        ts::TSProvider* tsp = ts::findTSProvider(tsd.name);
-        if (!tsp)
-            throw std::runtime_error(ERRSTR("Wrong Traffic Shaper"));
-        ts = tsp->instantiate(tsd.args);
-
-        driverThread = thread(&app::TrafficDriver::doSetupAndStart, this);
+    case AF_INET:
+        lport = laddr.ipv4.sin_port;
+        break;
+    case AF_INET6:
+        lport = laddr.ipv6.sin6_port;
+        break;
+    default:
+        throw std::runtime_error(ERRSTR("Wrong address family"));
     }
-    catch (...)
-    {
-    }
+    if (lport)
+        sock->bind();
+
+    if (sndBufSize)
+        sock->setSendBufferSize(sndBufSize);
+
+    ts::TSProvider* tsp = ts::findTSProvider(tsd.name);
+    if (!tsp)
+        throw std::runtime_error(ERRSTR("Wrong Traffic Shaper"));
+    ts = tsp->instantiate(tsd.args);
+
+    driverThread = thread(&app::TrafficDriver::doSetupAndStart, this);
 }
 
 app::TrafficDriver::~TrafficDriver()
