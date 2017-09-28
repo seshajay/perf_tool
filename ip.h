@@ -41,6 +41,9 @@ namespace ip
         void     setRecvBufferSize(uint32_t size);
         void     setSendBufferSize(uint32_t size);
         void     setKeepAlive(bool enabled);
+#ifdef __APPLE__
+        void     setNoSIGPIPE();
+#endif
         uint32_t getRecvBufferSize();
         uint32_t getSendBufferSize();
 

@@ -2,8 +2,12 @@
 #include "ts.h"
 
 #include <iostream>
+
+#ifdef __linux__
 #include <poll.h>
 #include <sys/eventfd.h>
+#endif
+
 #include <cstring>
 
 using namespace std;
@@ -52,6 +56,10 @@ app::TrafficDriver::TrafficDriver(const string& name, const ip::sockaddr& laddr,
 
     if (sndBufSize)
         sock->setSendBufferSize(sndBufSize);
+
+#ifdef __APPLE__
+    sock->setNoSIGPIPE();
+#endif
 
     ts::TSProvider* tsp = ts::findTSProvider(tsd.name);
     if (!tsp)
@@ -116,9 +124,21 @@ app::TrafficServer::TrafficServer(const std::string& name, const int fd,
     cb(cb),
     shuttingDown(false)
 {
+#ifdef __linux__
     efd = eventfd(0, 0);
     if (efd == -1)
         throw std::runtime_error(ERRSTR("Error creating event fd"));
+#elif __APPLE__
+    kq = kqueue();
+    if (kq == -1)
+        throw std::runtime_error(ERRSTR("Error in kqueue()"));
+
+    ev_pipe(pfd);
+    event = (struct kevent *) malloc(sizeof(struct kevent) * 2);
+    tevent = (struct kevent *) malloc(sizeof(struct kevent) * 2);
+#else
+    throw std::runtime_error(ERRSTR("Unsupported Platform"));
+#endif
 
     startTime = chrono::system_clock::now();
 
@@ -128,9 +148,24 @@ app::TrafficServer::TrafficServer(const std::string& name, const int fd,
 app::TrafficServer::~TrafficServer()
 {
     shuttingDown = true;
+
+#ifdef __linux__
     eventfd_write(efd, 1);
+#elif __APPLE__
+    ev_pipe_write(pfd[1]);
+#else
+    throw std::runtime_error(ERRSTR("Unsupported Platform"));
+#endif
+
     serverThread.join();
     printStats();
+
+#ifdef __APPLE__
+    close(pfd[0]);
+    close(pfd[1]);
+    free(event);
+    free(tevent);
+#endif
 }
 
 void
@@ -143,6 +178,7 @@ app::TrafficServer::doSetupAndStart()
 void
 app::TrafficServer::recvTraffic() try
 {
+#ifdef __linux__
     struct pollfd fds[2];
     fds[0].fd      = sock->fd;
     fds[0].events  = POLLIN;
@@ -150,12 +186,32 @@ app::TrafficServer::recvTraffic() try
     fds[1].fd      = efd;
     fds[1].events  = POLLIN;
     fds[1].revents = 0;
+#elif __APPLE__
+    EV_SET(event, pfd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+    EV_SET(event + 1, sock->fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+
+    int ret = kevent(kq, event, 2, NULL, 0, NULL);
+    if (ret == -1)
+        throw std::runtime_error(ERRSTR("Error while registering kevents"));
+    if (event->flags & EV_ERROR || (event+1)->flags & EV_ERROR)
+        throw std::runtime_error(ERRSTR("Event Error"));
+
+#else
+    throw std::runtime_error(ERRSTR("Unsupported Platform"));
+#endif
 
     while (!shuttingDown)
     {
+#ifdef __linux__
         int rc = poll(fds, 2, -1);
+#elif __APPLE__
+        int rc = kevent(kq, NULL, 0, tevent, 2, NULL);
+#else
+        throw std::runtime_error(ERRSTR("Unsupported Platform"));
+#endif
         if (rc < 0)
         {
+            std::cout << "Error\n";
             if (errno == EINTR)
                 continue;
             else

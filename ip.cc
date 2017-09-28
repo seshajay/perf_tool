@@ -1,26 +1,11 @@
 #include "ip.h"
 #include "helper.h"
 
-#include <fcntl.h>
 #include <netdb.h>
-#include <stdexcept>
 #include <unistd.h>
 #include <iostream>
 
 using namespace std;
-
-int
-rfcntl(int fd, int cmd, long arg)
-{
-    for (;;)
-    {
-        int rc = ::fcntl(fd, cmd, arg);
-        if (rc != -1)
-            return rc;
-        if (errno != EINTR)
-            std::runtime_error(ERRSTR("Error in fcntl"));
-    }
-}
 
 static int
 ip_guessIPAddressFamily(const string& addr)
@@ -162,6 +147,18 @@ ip::Socket::setKeepAlive(bool enabled)
     if (ret == -1)
         throw std::runtime_error(ERRSTR("Error setting keepalive"));
 }
+
+#ifdef __APPLE__
+void
+ip::Socket::setNoSIGPIPE()
+{
+    int val = 1;
+    int ret = ::setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &val, sizeof(val));
+
+    if (ret == -1)
+        throw std::runtime_error(ERRSTR("Error setting nagle"));
+}
+#endif
 
 uint32_t
 ip::Socket::getRecvBufferSize()

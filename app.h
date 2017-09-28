@@ -5,6 +5,10 @@
 #include "helper.h"
 #include "traffic.h"
 
+#ifdef __APPLE__
+#include <sys/event.h>
+#endif
+
 #include <limits>
 #include <string>
 #include <thread>
@@ -43,7 +47,14 @@ namespace app
     struct ServerApp : public PerfApp
     {
         tcp::Socket sock;
+#ifdef __linux__
         int efd;
+#elif __APPLE__
+        int kq;
+        int pfd[2];
+        struct kevent *event;
+        struct kevent *tevent;
+#endif
         uint64_t totalBytesReceived;
         bool shuttingDown;
 		bool completedServerVal;

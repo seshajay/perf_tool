@@ -2,8 +2,12 @@
 
 #include <algorithm>
 #include <iostream>
+
+#ifdef __linux__
 #include <poll.h>
 #include <sys/eventfd.h>
+#endif
+
 #include <cstring>
 
 using namespace std;
@@ -78,9 +82,21 @@ app::ServerApp::ServerApp(const ip::sockaddr& addr, const uint64_t rcvBufSize,
     totalBytesReceived(0),
     shuttingDown(false)
 {
+#ifdef __linux__
     efd = eventfd(0, 0);
     if (efd == -1)
         throw std::runtime_error(ERRSTR("Error creating event fd"));
+#elif __APPLE__
+    kq = kqueue();
+    if (kq == -1)
+        throw std::runtime_error(ERRSTR("Error in kqueue()"));
+
+    ev_pipe(pfd);
+    event = (struct kevent *) malloc(sizeof(struct kevent) * 2);
+    tevent = (struct kevent *) malloc(sizeof(struct kevent) * 2);
+#else
+    throw std::runtime_error(ERRSTR("Unsupported Platform"));
+#endif
 
     sock.setNonBlocking();
     sock.setReuseAddr();
@@ -97,7 +113,15 @@ app::ServerApp::ServerApp(const ip::sockaddr& addr, const uint64_t rcvBufSize,
 app::ServerApp::~ServerApp()
 {
     shuttingDown = true;
+
+#ifdef __linux__
     eventfd_write(efd, 1);
+#elif __APPLE__
+    ev_pipe_write(pfd[1]);
+#else
+    throw std::runtime_error(ERRSTR("Unsupported Platform"));
+#endif
+
 	completedServersLock.lock();
 	completedServerVal = true;
     completedServersCV.notify_one();
@@ -107,6 +131,13 @@ app::ServerApp::~ServerApp()
     activeServerCleanup();
     // No more active servers to complete, so we don't have to take a lock
     completedServerCleanup();
+
+#ifdef __APPLE__
+    close(pfd[0]);
+    close(pfd[1]);
+    free(event);
+    free(tevent);
+#endif
 }
 
 void
@@ -149,6 +180,7 @@ app::ServerApp::manageServers()
 void
 app::ServerApp::listen()
 {
+#ifdef __linux__
     struct pollfd fds[2];
     fds[0].fd      = sock.fd;
     fds[0].events  = POLLIN;
@@ -156,10 +188,28 @@ app::ServerApp::listen()
     fds[1].fd      = efd;
     fds[1].events  = POLLIN;
     fds[1].revents = 0;
+#elif __APPLE__
+    EV_SET(event, pfd[0], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+    EV_SET(event + 1, sock.fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+
+    int rc = kevent(kq, event, 2, NULL, 0, NULL);
+    if (rc == -1)
+        throw std::runtime_error(ERRSTR("Error while registering kevents"));
+    if (event->flags & EV_ERROR || (event+1)->flags & EV_ERROR)
+        throw std::runtime_error(ERRSTR("Event Error"));
+#else
+    throw std::runtime_error(ERRSTR("Unsupported Platform"));
+#endif
 
     while (!shuttingDown)
     {
+#ifdef __linux__
         int ret = poll(fds, 2, -1);
+#elif __APPLE__
+        int ret = kevent(kq, NULL, 0, tevent, 2, NULL);
+#else
+        throw std::runtime_error(ERRSTR("Unsupported Platform"));
+#endif
         if (ret == -1)
             throw std::runtime_error(ERRSTR("Error during poll"));
         if (shuttingDown)

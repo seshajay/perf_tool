@@ -54,7 +54,14 @@ tcp::Socket::write(const void* buf, size_t nbytes)
 {
     for (;;)
     {
+#ifdef __linux__
         ssize_t rc = ::send(fd, buf, nbytes, MSG_NOSIGNAL);
+#elif __APPLE__
+        ssize_t rc = ::send(fd, buf, nbytes, 0);
+#else
+        throw std::runtime_error(ERRSTR("Unknown Platform"));
+#endif
+
         if (rc >= 0)
             return rc;
         if (errno != EINTR)
@@ -69,7 +76,13 @@ tcp::Socket::send(struct iovec *iov, size_t niov)
 
     mh.msg_iov = iov;
     mh.msg_iovlen = niov;
+#ifdef __linux__
     return ::sendmsg(fd, &mh, MSG_NOSIGNAL);
+#elif __APPLE__
+    return ::sendmsg(fd, &mh, 0);
+#else
+        throw std::runtime_error(ERRSTR("Unknown Platform"));
+#endif
 }
 
 ssize_t
@@ -97,35 +110,51 @@ tcp::Socket::setNagle(bool enabled)
 void
 tcp::Socket::setKeepAliveCount(uint32_t size)
 {
+#ifdef __linux__
     int ret = ::setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &size,
                            sizeof(size));
     if (ret == -1)
         throw std::runtime_error(ERRSTR("Error setting keepalive count"));
+#else
+    throw std::runtime_error(ERRSTR("Not supported"));
+#endif
 }
 
 void
 tcp::Socket::setKeepAliveIdle(uint32_t size)
 {
+#ifdef __linux__
     int ret = ::setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &size,
                            sizeof(size));
     if (ret == -1)
         throw std::runtime_error(ERRSTR("Error setting keepalive idle"));
+#else
+    throw std::runtime_error(ERRSTR("Not supported"));
+#endif
 }
 
 void
 tcp::Socket::setKeepAliveInterval(uint32_t size)
 {
+#ifdef __linux__
     int ret = ::setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &size,
                            sizeof(size));
     if (ret == -1)
         throw std::runtime_error(ERRSTR("Error setting keepalive interval"));
+#else
+    throw std::runtime_error(ERRSTR("Not supported"));
+#endif
 }
 
 void
 tcp::Socket::getTCPInfo(struct tcp_info* ti)
 {
+#ifdef __linux__
     socklen_t len = sizeof(*ti);
     int ret = ::getsockopt(fd, SOL_TCP, TCP_INFO, ti, &len);
     if (ret == -1)
         throw std::runtime_error(ERRSTR("Error getting tcp info"));
+#else
+    throw std::runtime_error(ERRSTR("Not supported"));
+#endif
 }

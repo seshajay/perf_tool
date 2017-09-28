@@ -5,6 +5,10 @@
 #include "helper.h"
 #include "ts.h"
 
+#ifdef __APPLE__
+#include <sys/event.h>
+#endif
+
 #include <string>
 #include <thread>
 
@@ -54,7 +58,14 @@ namespace app
 
     struct TrafficServer : public TrafficEnabler
     {
+#ifdef __linux__
         int efd;
+#elif __APPLE__
+        int kq;
+        int pfd[2];
+        struct kevent *event;
+        struct kevent *tevent;
+#endif
         uint64_t bytesReceived;
         funcTS_t cb;
         bool shuttingDown;

@@ -1,5 +1,5 @@
 CXX=g++
-RM=rm -f
+RM=rm -rf
 CPPFLAGS=-g -pthread -std=c++0x
 
 SRCS=../ip.cc ../tcp.cc
@@ -19,4 +19,4 @@ $(OBJS): %.o : ../%.cc
 	$(CXX) $(CPPFLAGS) -c $<
 
 clean:
-	$(RM) $(OBJS) testclient testserver
+	$(RM) $(OBJS) testclient testserver *.dSYM
