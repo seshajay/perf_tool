@@ -4,7 +4,6 @@
 #include <iostream>
 
 #ifdef __linux__
-#include <poll.h>
 #include <sys/eventfd.h>
 #endif
 
@@ -184,10 +183,51 @@ app::TrafficServer::doSetupAndStart()
 }
 
 void
+app::TrafficServer::recvBlock(void* rbuf, size_t buflen)
+{
+    char *buf = (char *) rbuf;
+    while (!shuttingDown)
+    {
+#ifdef __linux__
+        int rc = poll(fds, 2, -1);
+#elif __APPLE__
+        int rc = kevent(kq, NULL, 0, tevent, 2, NULL);
+#else
+        throw std::runtime_error(ERRSTR("Unsupported Platform"));
+#endif
+        if (rc < 0)
+        {
+            if (errno == EINTR)
+                continue;
+            else
+                throw std::runtime_error(ERRSTR("Error in poll"));
+        }
+
+        if (shuttingDown)
+            break;
+
+        ssize_t count = sock->recv(buf, buflen);
+        if (count <= 0)
+        {
+            if (count < 0 && errno == EINTR)
+                continue;
+            throw std::runtime_error(ERRSTR("conn closed"));
+        }
+
+        if (buflen - count > 0)
+        {
+            buf += count;
+            buflen -= count;
+        }
+        else
+            return;
+    }
+}
+
+void
 app::TrafficServer::recvTraffic() try
 {
 #ifdef __linux__
-    struct pollfd fds[2];
     fds[0].fd      = sock->fd;
     fds[0].events  = POLLIN;
     fds[0].revents = 0;
@@ -210,34 +250,19 @@ app::TrafficServer::recvTraffic() try
 
     while (!shuttingDown)
     {
-#ifdef __linux__
-        int rc = poll(fds, 2, -1);
-#elif __APPLE__
-        int rc = kevent(kq, NULL, 0, tevent, 2, NULL);
-#else
-        throw std::runtime_error(ERRSTR("Unsupported Platform"));
-#endif
-        if (rc < 0)
+        // TODO: Eventually the first block of every transfer would be a packet
+        // header. We would try to read the entire header first. The header will
+        // have the transfer size as a field.
+        uint64_t blockSize;
+        recvBlock(&blockSize, sizeof(blockSize));
+        if (blockSize > large)
         {
-            std::cout << "Error\n";
-            if (errno == EINTR)
-                continue;
-            else
-                throw std::runtime_error(ERRSTR("Error in poll"));
+            cout << "Malformed Packet\n";
+            throw std::runtime_error(ERRSTR("Malformed Packet\n"));
         }
 
-        if (shuttingDown)
-            break;
-
-        ssize_t count = sock->recv(buf, large);
-        if (count <= 0)
-        {
-            if (count < 0 && errno == EINTR)
-                continue;
-            throw std::runtime_error(ERRSTR("conn closed"));
-        }
-
-        bytesReceived += count;
+        recvBlock(buf, blockSize);
+        bytesReceived += sizeof(blockSize) + blockSize;
     }
 }
 catch(...)

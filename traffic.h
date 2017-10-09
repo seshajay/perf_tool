@@ -5,7 +5,9 @@
 #include "helper.h"
 #include "ts.h"
 
-#ifdef __APPLE__
+#ifdef __linux__
+#include <poll.h>
+#elif __APPLE__
 #include <sys/event.h>
 #endif
 
@@ -59,6 +61,7 @@ namespace app
     struct TrafficServer : public TrafficEnabler
     {
 #ifdef __linux__
+        struct pollfd fds[2];
         int efd;
 #elif __APPLE__
         int kq;
@@ -73,6 +76,7 @@ namespace app
         systime_t startTime;
 
         virtual void doSetupAndStart();
+        void recvBlock(void* rbuf, size_t buflen);
         void recvTraffic();
         void printStats();
 
