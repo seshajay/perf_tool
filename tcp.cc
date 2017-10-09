@@ -127,7 +127,7 @@ tcp::Socket::recv(void* buf, size_t bufLen)
 }
 
 ssize_t
-tcp::Socket::recv_nonblocking(void* buf, size_t bufLen)
+tcp::Socket::recvNonBlocking(void* buf, size_t bufLen)
 {
     return ::recv(fd, buf, bufLen, MSG_DONTWAIT);
 }

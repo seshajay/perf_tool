@@ -17,7 +17,7 @@ namespace tcp
         void writeBlock(struct iovec *iov, int iovcnt, size_t iovlen);
         ssize_t send(struct iovec *iov, size_t niov);
         ssize_t recv(void* buf, size_t bufLen);
-        ssize_t recv_nonblocking(void* buf, size_t bufLen);
+        ssize_t recvNonBlocking(void* buf, size_t bufLen);
 
         void setNagle(bool enabled);
         void setKeepAliveCount(uint32_t size);
