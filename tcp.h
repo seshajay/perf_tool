@@ -14,6 +14,7 @@ namespace tcp
 
         size_t read(void* buf, size_t nbyte);
         size_t write(const void* buf, size_t nbytes);
+        void writeBlock(struct iovec *iov, int iovcnt, size_t iovlen);
         ssize_t send(struct iovec *iov, size_t niov);
         ssize_t recv(void* buf, size_t bufLen);
         ssize_t recv_nonblocking(void* buf, size_t bufLen);

@@ -1,6 +1,7 @@
 #include "tcp.h"
 #include "helper.h"
 
+#include <sys/uio.h>
 #include <unistd.h>
 #include <stdexcept>
 #include <iostream>
@@ -69,6 +70,40 @@ tcp::Socket::write(const void* buf, size_t nbytes)
     }
 }
 
+void
+tcp::Socket::writeBlock(struct iovec *iov, int iovcnt, size_t iovlen)
+{
+    for (;;)
+    {
+        ssize_t rc = ::writev(fd, iov, iovcnt);
+
+        if (rc < 0)
+        {
+            if (errno == EINTR || errno == EAGAIN)
+                continue;
+            throw std::runtime_error(ERRSTR("Error while sending data"));
+        }
+
+        if (iovlen - rc == 0)
+            return;
+        else if (iovlen < rc)
+            throw std::runtime_error(ERRSTR("More than required bytes sent?"));
+
+        while (rc >= iov->iov_len)
+        {
+            rc -= iov->iov_len;
+            iovlen -= iov->iov_len;
+            --iovcnt;
+            ++iov;
+        }
+
+        if (rc)
+            iovlen -= rc;
+        iov->iov_len -= rc;
+        iov->iov_base = (char *) iov->iov_base + rc;
+    }
+}
+
 ssize_t
 tcp::Socket::send(struct iovec *iov, size_t niov)
 {
@@ -81,7 +116,7 @@ tcp::Socket::send(struct iovec *iov, size_t niov)
 #elif __APPLE__
     return ::sendmsg(fd, &mh, 0);
 #else
-        throw std::runtime_error(ERRSTR("Unknown Platform"));
+    throw std::runtime_error(ERRSTR("Unknown Platform"));
 #endif
 }
 
