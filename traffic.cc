@@ -97,9 +97,17 @@ app::TrafficDriver::startTraffic()
         {
 			// TODO: Improve this - split into perftest and reltest
 			uint64_t avail = std::min((uint64_t) msgSize, ts->avail());
-            uint64_t sent = sock->write(buf, avail);
-            ts->update(sent);
-            sentBytes += sent;
+            struct iovec iov[2];
+            // TODO: Use iov[0] to send the base packet header instead of the
+            // size of transfer
+            iov[0].iov_base = &avail;
+            iov[0].iov_len  = sizeof(avail);
+            iov[1].iov_base = buf;
+            iov[1].iov_len  = avail;
+            size_t iovlen = iov[0].iov_len + iov[1].iov_len;
+            sock->writeBlock(iov, 2, iovlen);
+            ts->update(iovlen);
+            sentBytes += iovlen;
         }
     }
 }
