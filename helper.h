@@ -58,7 +58,7 @@ inline uint64_t strtou64(const std::string& str)
         return (uint64_t) val;
 
     assert(sizes.size() == multipliers.size());
-    int index;
+    uint8_t index;
     for (index = 0; index < sizes.size(); index++)
     {
         if (!sizes[index].compare(pEnd))

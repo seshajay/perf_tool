@@ -1,6 +1,6 @@
 CXX=g++
 RM=rm -rf
-CPPFLAGS=-g -pthread -std=c++0x
+CPPFLAGS=-g -pthread -Wno-sign-compare -Wall -std=c++0x -Werror
 
 SRCS=../ip.cc ../tcp.cc
 SRCS+=../ts.cc ../ts-noop.cc ../ts-rl.cc

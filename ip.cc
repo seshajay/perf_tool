@@ -68,8 +68,6 @@ ip::Socket::Socket(const int fd, const ip::sockaddr& addr) :
 ip::Socket::Socket(const ip::sockaddr& addr, const int type) :
     addr(addr)
 {
-    int ret;
-
     fd = ::socket(addr.sa.sa_family, type, 0);
     if (fd == -1)
         throw std::runtime_error(ERRSTR("Error creating a socket"));
