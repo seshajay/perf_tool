@@ -21,7 +21,7 @@ namespace ip
             struct sockaddr_in6     ipv6;
         };
 
-		std::string toString() const;
+        std::string toString() const;
 
         sockaddr(const std::string addr, const uint16_t port = 0);
         sockaddr() : sa_len(0), storage({}) {}

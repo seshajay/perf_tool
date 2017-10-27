@@ -35,9 +35,9 @@ handleSignal(int signum)
 void
 handleClientAppDone()
 {
-	std::lock_guard<std::mutex> lock(clientCompletedLock);
-	i = 1;
-	clientCompletedCV.notify_all();
+    std::lock_guard<std::mutex> lock(clientCompletedLock);
+    i = 1;
+    clientCompletedCV.notify_all();
 }
 
 static void
@@ -114,7 +114,7 @@ main(int argc, char* argv[]) try
     cout <<"Starting the traffic test...\n";
     ip::sockaddr laddr(lAddrStr, 0);
     ip::sockaddr raddr(rAddrStr, rPort);
-	func_t cb = std::bind(handleClientAppDone);
+    func_t cb = std::bind(handleClientAppDone);
 
     ts::TSDescriptor tsd = {"noop", ""};
     if (rate)
@@ -127,7 +127,7 @@ main(int argc, char* argv[]) try
                               numConnections, (app::MsgSize) msgSize,
                               sndBufSize);
 
-	std::unique_lock<std::mutex> ul(clientCompletedLock);
+    std::unique_lock<std::mutex> ul(clientCompletedLock);
     clientCompletedCV.wait(ul, []{return i == 1;});
 
     printStats();
@@ -138,10 +138,10 @@ catch (std::exception& e)
 {
     cout << "Unhandled exception: " << e.what();
     cout << " err: " << strerror(errno) << endl;
-	delete capp;
+    delete capp;
 }
 catch (...)
 {
     cout << "Unhandled unknown exception" << endl;
-	delete capp;
+    delete capp;
 }

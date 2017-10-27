@@ -10,7 +10,7 @@ namespace ts
     struct NOOP : public TrafficShaper
     {
         virtual bool isReady();
-		virtual uint64_t avail();
+        virtual uint64_t avail();
         virtual void update(uint64_t size);
 
         NOOP(const TSDescriptor& tsd);

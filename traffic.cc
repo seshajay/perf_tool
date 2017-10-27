@@ -94,8 +94,8 @@ app::TrafficDriver::startTraffic()
     {
         if (ts->isReady())
         {
-			// TODO: Improve this - split into perftest and reltest
-			uint64_t avail = std::min((uint64_t) msgSize, ts->avail());
+            // TODO: Improve this - split into perftest and reltest
+            uint64_t avail = std::min((uint64_t) msgSize, ts->avail());
             struct iovec iov[2];
             // TODO: Use iov[0] to send the base packet header instead of the
             // size of transfer
@@ -278,7 +278,7 @@ app::TrafficServer::printStats()
     uint64_t tput = (bytesReceived / diff.count()) * 8;
     string tputStr = (tput) ? formatThroughput(tput) : "0 bps";
 
-	cout << name.c_str() << " done\n";
+    cout << name.c_str() << " done\n";
     cout << "Bytes Received: " << bytesReceived << endl;
     cout << "Time elapsed: " << diff.count() << " sec\n";
     cout << "Throughput: " << tputStr.c_str() << endl;

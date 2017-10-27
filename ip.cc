@@ -46,17 +46,17 @@ ip::sockaddr::sockaddr(const std::string addr, const uint16_t port)
 std::string
 ip::sockaddr::toString() const
 {
-	char addrStr[IP_ADDR_LEN];
+    char addrStr[IP_ADDR_LEN];
     int family = sa.sa_family;
 
-	if (family == AF_INET)
+    if (family == AF_INET)
         inet_ntop(family, &ipv4.sin_addr, addrStr, IP_ADDR_LEN);
-	else if (family == AF_INET6)
-		inet_ntop(family, &ipv6.sin6_addr, addrStr, IP_ADDR_LEN);
-	else
-		return "Unknown address";
+    else if (family == AF_INET6)
+        inet_ntop(family, &ipv6.sin6_addr, addrStr, IP_ADDR_LEN);
+    else
+        return "Unknown address";
 
-	return addrStr;
+    return addrStr;
 }
 
 ip::Socket::Socket(const int fd, const ip::sockaddr& addr) :

@@ -122,10 +122,10 @@ app::ServerApp::~ServerApp()
     throw std::runtime_error(ERRSTR("Unsupported Platform"));
 #endif
 
-	completedServersLock.lock();
-	completedServerVal = true;
+    completedServersLock.lock();
+    completedServerVal = true;
     completedServersCV.notify_one();
-	completedServersLock.unlock();
+    completedServersLock.unlock();
     serverThread.join();
     listenerThread.join();
     activeServerCleanup();
@@ -173,7 +173,7 @@ app::ServerApp::manageServers()
         std::unique_lock<std::mutex> ul(completedServersLock);
         completedServersCV.wait(ul, [this]{return completedServerVal == true;});
         completedServerCleanup();
-		completedServerVal = false;
+        completedServerVal = false;
     }
 }
 
@@ -260,7 +260,7 @@ app::ServerApp::serverCompleted(app::TrafficServer* server)
         activeServers.remove(server);
         std::lock_guard<std::mutex> cslock(completedServersLock);
         completedServers.push_back(server);
-		completedServerVal = true;
+        completedServerVal = true;
         completedServersCV.notify_one();
     }
 }

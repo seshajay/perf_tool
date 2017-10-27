@@ -29,7 +29,7 @@ namespace app
         const uint64_t testDurationSec;
         uint64_t totalBytesSent;
         std::list<TrafficDriver*> drivers;
-		const func_t cb;
+        const func_t cb;
         const ts::TSDescriptor tsd;
 
     protected:
@@ -57,7 +57,7 @@ namespace app
 #endif
         uint64_t totalBytesReceived;
         bool shuttingDown;
-		bool completedServerVal;
+        bool completedServerVal;
 
         std::mutex completedServersLock;
         std::condition_variable completedServersCV;

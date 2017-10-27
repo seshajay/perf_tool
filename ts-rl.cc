@@ -46,7 +46,7 @@ ts::RateLimiter::isReady()
 uint64_t
 ts::RateLimiter::avail()
 {
-	return availCapacity;
+    return availCapacity;
 }
 
 void

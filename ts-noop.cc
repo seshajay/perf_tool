@@ -22,7 +22,7 @@ ts::NOOP::isReady()
 uint64_t
 ts::NOOP::avail()
 {
-	return std::numeric_limits<uint64_t>::max();
+    return std::numeric_limits<uint64_t>::max();
 }
 
 void
