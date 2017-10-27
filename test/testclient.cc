@@ -9,7 +9,7 @@ using namespace std;
 app::ClientApp *capp = NULL;
 mutex clientCompletedLock;
 condition_variable clientCompletedCV;
-int i = 0;
+int cvVar = 0;
 
 static void
 printStats()
@@ -36,7 +36,7 @@ void
 handleClientAppDone()
 {
     std::lock_guard<std::mutex> lock(clientCompletedLock);
-    i = 1;
+    cvVar = 1;
     clientCompletedCV.notify_all();
 }
 
@@ -128,7 +128,7 @@ main(int argc, char* argv[]) try
                               sndBufSize);
 
     std::unique_lock<std::mutex> ul(clientCompletedLock);
-    clientCompletedCV.wait(ul, []{return i == 1;});
+    clientCompletedCV.wait(ul, []{return cvVar == 1;});
 
     printStats();
     delete capp;
