@@ -81,6 +81,11 @@ app::TrafficDriver::doSetupAndStart()
     cout << "Connected with " << raddr.toString().c_str() << endl;
 
     sock->setNagle(false);
+
+    // Having a single buffer allows us to take advantage of maximum cache
+    // locality and is useful for pure network performance testing.
+    // TODO: Add better memory management and improve the TrafficDriver and
+    //       TrafficServer to support file transfers
     buf = (char *) malloc(msgSize * sizeof(char));
     memset(buf, 1, msgSize);
 
